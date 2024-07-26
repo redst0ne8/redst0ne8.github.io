@@ -1,8 +1,13 @@
 <!DOCTYPE html>
 <html>
     <head>
+      <style>
+        .navbar a:hover, .dropdown:hover .dropbtn {
+          background-color: #44446f;
+        }
+      </style>
         <link rel="stylesheet" href="stylesheet.css">
-        <title>Chronos Science Corporation Webiste</title>
+        <title>CSC Website Home</title>
         <body>
             <h1 style="text-align: center;">Chronos Science Corporation Website</h1>
             <div class="navbar">
@@ -14,8 +19,8 @@
                     <i class="fa-caret-down"></i>
                   </button>
                   <div class="dropdown-content">
-                    <a href="cm.html">Community Moderation</a>
-                    <a href="gm.html">Game Moderation</a>
+                    <a href="cm.html" id="cm">Community Moderation</a>
+                    <a href="gm.html" id="gm">Game Moderation</a>
                   </div>
                 </div>
                 <a href="divisions.html">Divisons Overview</a>

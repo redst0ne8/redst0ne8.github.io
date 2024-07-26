@@ -1,3 +1,14 @@
+.bebas-neue-regular {
+  font-family: "Bebas Neue", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+.black-ops-one-regular {
+  font-family: "Black Ops One", system-ui;
+  font-weight: 400;
+  font-style: normal;
+}
+
 body {
     font-family: sans-serif;
 }
@@ -65,11 +76,6 @@ nav ul li a :hover {
     margin: 0; /* Important for vertical align on mobile phones */
   }
   
-  /* Add a red background color to navbar links on hover */
-  .navbar a:hover, .dropdown:hover .dropbtn {
-    background-color: #44446f;
-  }
-  
   /* Dropdown content (hidden by default) */
   .dropdown-content {
     display: none;
@@ -99,6 +105,21 @@ nav ul li a :hover {
   .dropdown:hover .dropdown-content {
     display: block;
   }
-  #cso:hover{
-    background-color: aqua;
+  #cso:hover {
+    background-color: #00438f;
+    color: white;
+  }
+  #trc:hover {
+    background-color: #81080f;
+    color: white;
+  }
+  #ce:hover {
+    background-color: #cdb9e0;
+  }
+  #cm:hover {
+    background-color: #f54bb8;
+    color: white;
+  }
+  #gm:hover {
+    background-color: #f0c243;
   }
