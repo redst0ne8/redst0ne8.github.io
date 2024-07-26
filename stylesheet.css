@@ -7,8 +7,23 @@ h1 {
 h2 {
     font-size: 40px;
 }
-nav {height: 38px; color:darkBlue; margin-bottom: 30px;}
-nav ul {list-style-type: none;}
-nav ul li {float: left; width:200px; text-align: center;}
-nav ul li a {background-color: red; color: white; display: block; padding: 10px;}
-nav ul li a:hover {background-color: gray; color: black}
+nav ul{
+    list-style-type: none;
+    font-weight: bold;
+}
+nav ul li {
+    display: inline;
+    border-right: 2px solid #000000;
+    padding-right: 8px;
+    padding-left: 8px;
+}
+nav ul :last-child {
+    border-right: none;
+}
+nav ul li a {
+    text-decoration: none;
+    color: blue;
+}
+nav ul li a :hover {
+    color: black;
+}
