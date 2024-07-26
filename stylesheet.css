@@ -46,7 +46,7 @@ nav ul li a :hover {
   
   /* The dropdown container */
   .dropdown {
-    float: left;
+    float: left;    
     overflow: hidden;
   }
   
@@ -64,7 +64,7 @@ nav ul li a :hover {
   
   /* Add a red background color to navbar links on hover */
   .navbar a:hover, .dropdown:hover .dropbtn {
-    background-color: red;
+    background-color: #44446f;
   }
   
   /* Dropdown content (hidden by default) */
