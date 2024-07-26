@@ -7,3 +7,8 @@ h1 {
 h2 {
     font-size: 40px;
 }
+nav {height: 38px; color:darkBlue; margin-bottom: 30px;}
+nav ul {list-style-type: none;}
+nav ul li {float: left; width:200px; text-align: center;}
+nav ul li a {background-color: red; color: white; display: block; padding: 10px;}
+nav ul li a:hover {background-color: gray; color: black}
