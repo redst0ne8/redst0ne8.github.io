@@ -7,6 +7,9 @@ h1 {
 h2 {
     font-size: 40px;
 }
+p {
+  font-size: 16px;
+}
 /*nav ul{
     list-style-type: none;
     font-weight: bold;
@@ -95,4 +98,7 @@ nav ul li a :hover {
   /* Show the dropdown menu on hover */
   .dropdown:hover .dropdown-content {
     display: block;
+  }
+  #cso:hover{
+    background-color: aqua;
   }
