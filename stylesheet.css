@@ -153,3 +153,6 @@ nav ul li a :hover {
     margin-right: auto;
     width: 35%;
   }
+li {
+  font-size: 20px;
+}
