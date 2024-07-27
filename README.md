@@ -11,3 +11,9 @@ I currently have nothing set into stone but I have some ideas for this creation:
 - And more!
 
 I hope you stick along for the journey!
+
+The following pages are completed:
+
+- Overview of CSC
+- Meet our leaders
+- Game Info and Overview
