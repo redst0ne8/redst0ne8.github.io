@@ -86,7 +86,7 @@ nav ul li a :hover {
     font-family: inherit; /* Important for vertical align on mobile phones */
     margin: 0; /* Important for vertical align on mobile phones */
   }
-  
+
   /* Dropdown content (hidden by default) */
   .dropdown-content {
     display: none;
@@ -133,4 +133,8 @@ nav ul li a :hover {
   }
   #gm:hover {
     background-color: #f0c243;
+  }
+  table {
+    margin-left: auto;
+    margin-right: auto;
   }
