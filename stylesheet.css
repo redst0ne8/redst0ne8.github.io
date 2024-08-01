@@ -9,6 +9,11 @@
   font-style: normal;
 }
 
+.tab { 
+       display:inline-block; 
+       margin-left: 40px; 
+}
+
 .open-sans {
   font-family: "Open Sans", sans-serif;
   font-optical-sizing: auto;
