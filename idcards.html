@@ -20,10 +20,33 @@
                       var image = document.getElementById("result");
                       image.src = imageFile;
                     
-                      } if (command == "clandestine9") {
-                        command = "1 Card found. <br> <img src='CSC Exec ID Card Cland.png' alt='clandestine ID Card'></img>";
-                      } else if (command == "Cyte") {
-                        command = "1 Card found. <br> <img src='CSC SA ID Card Cyte.png' alt='Cyte ID Carc'></img>";
+  if (command == "make duck noise") {
+    command = "QUACK QUACK";
+  } else if (command == "make rooster noise") {
+    command = "COCK-A-DOODLE-DOO";
+  } else if (command == "clandestine9") {
+    command = "1 card found <br> <img src='CSC Exec ID Card Cland.png'></img>";
+} else if (command == "stewy1478") {
+    command = "1 card found <br> <img src='CSC Exec ID Card Stewy.png'></img>";
+} else if (command == "clearlymissing") {
+    command = "1 card found <br> <img src='CSC Exec ID Card Clearly.png'></img>";
+} else if (command == "cyte._.") {
+    command = "1 card found <br> <img src='CSC SA ID Card Cyte.png'></img>";
+} else if (command == "clasicdoctors") {
+    command = "1 card found <br> <img src='CSC SA ID Card Clasic.png'></img>";
+} else if (command == "caughffiegh") {
+    command = "1 card found <br> <img src='CSC A ID Card Coffee.png'></img>";
+} else if (command == "hacker01010") {
+    command = "1 card found <br> <img src='CSC A ID Card Vito.png'></img>";
+} else if (command == "human207") {
+    command = "2 cards found <br> <img src='CSC ID Card greatguy.png'></img> <br> <img src='CSC TRC ID Card greatguy.png'</img>";
+} else if (command == "modgamer2oo") {
+    command = "1 card found <br> <img src='CSC Dev ID Card Felix.png'></img>";
+} else if (command == "daiuski") {
+    command = "1 card found <br> <img src='CSC Dev ID Card Daiuski.png'></img>";
+  } else if (command != "make duck noise" || command != "make rooster noise") {
+    command = "Invalid command";
+  }
                     
                       var commandSpan = document.getElementById("result");
                       commandSpan.innerHTML = command;
