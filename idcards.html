@@ -5,7 +5,31 @@
         .navbar a:hover, .dropdown:hover .dropbtn {
           background-color: #44446f;
         }
+        table {
+            font-size: 20px;
+        }
+        td {
+            padding: 0px 10px 0px 10px;
+        }
       </style>
+        <script>
+                    function theCommand(imageFile) {
+                      var commandInput = document.getElementById("commandInput");
+                      var command = commandInput.value;
+                    
+                      var image = document.getElementById("result");
+                      image.src = imageFile;
+                    
+                      } if (command == "clandestine9") {
+                        command = "1 Card found. <br> <img src='CSC Exec ID Card Cland.png' alt='clandestine ID Card'></img>";
+                      } else if (command == "Cyte") {
+                        command = "1 Card found. <br> <img src='CSC SA ID Card Cyte.png' alt='Cyte ID Carc'></img>";
+                    
+                      var commandSpan = document.getElementById("result");
+                      commandSpan.innerHTML = command;
+                    }
+        </script>
+                    
         <link rel="stylesheet" href="stylesheet.css">
         <link rel="icon" type="image/x-icon" href="csc.png">
         <title>CSC ID Cards</title>
@@ -49,38 +73,26 @@
             <p> Below is an embedded google doc pertaining to the status of every ID Card created.</p>
             <iframe src="https://docs.google.com/document/d/e/2PACX-1vTVuKIMOXYiusovFRjQrhihoyjDR3X02zaG830_dZjdW_Cihl9x-58JG3r_BMNIALAavU63GxF799dv/pub?embedded=true" width="1000px" height="1000px"></iframe>
             <h2>Where can I see the ID cards that have been created?</h2>
-            <p>You can see the ID cards <a href="https://drive.google.com/drive/folders/1cq0wbHhFDFfkmKQOSoZ6Puq9YnWhwvsa?usp=drive_link">here</a> (via Google Drive)</p>
-            <h2>Can I request one</h2>
-            <p>Currently you cannot request an ID card, but it may change in the future!</p>
+            <p>You can see the ID cards <a href="https://drive.google.com/drive/folders/1cq0wbHhFDFfkmKQOSoZ6Puq9YnWhwvsa?usp=drive_link">here</a> (via Google Drive) or by using the call system below!</p>
+            <h3>Card Caller</h3>
+            <p>Below is a card caller. Enter the username as shown on the card or in this database below and it will call back all the cards under that username!</p>
+            <table style="text-align: left;">
+                <tr><td>clandestine9</td><td>stewy1478</td><td>clearlymissing</td><td>cyte._.</td><td>clasicdoctors</td></tr>
+                <tr><td>caughffiegh</td><td>vitoyotube353</td><td>greatguy</td><td>modgamer2oo</td><td>daiuski</td></tr>
+                <tr><td>redst0ne8</td><td>aurirova</td><td>fun._._</td><td>tylergriver01</td><td>puggy64</td></tr>
+                <tr><td>zetxuu</td><td>alwaysm</td><td>certified_legend</td><td>monitoredsuspicioususer</td><td>emiliukzz</td></tr>
+                <tr><td>saekoboyy</td><td>chicken1051</td><td>jellynikt</td></tr>
 
-            <script>
-function theCommand(imageFile) {
-  var commandInput = document.getElementById("commandInput");
-  var command = commandInput.value;
-
-  var image = document.getElementById("result");
-  image.src = imageFile;
-
-  if (command == "make duck noise") {
-    command = "QUACK QUACK";
-  } else if (command == "make rooster noise") {
-    command = "COCK-A-DOODLE-DOO";
-  } else if (command == "Cyte") {
-    command = "1 Card found. <br> <img src='CSC SA ID Card Cyte.png' alt='Cyte ID Carc'></img>";
-  } else if (command != "make duck noise" || command != "make rooster noise") {
-    command = "Invalid command";
-  }
-
-  var commandSpan = document.getElementById("result");
-  commandSpan.innerHTML = command;
-}
-            </script>
+            </table>
+            <br>
             Enter username: <input type="text" id="commandInput" />
             <button onClick="theCommand('duck.png')">Show results</button>
             <br />
             <br />
             <span id="result"></span>
             <img id="imgResult"/>
+            <h2>Can I request one</h2>
+            <p>Currently you cannot request an ID card, but it may change in the future!</p>
         </body>
     </head>
 </html>

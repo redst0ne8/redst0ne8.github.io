@@ -151,10 +151,10 @@ nav ul li a :hover {
   #gm:hover {
     background-color: #f0c243;
   }
-  table {
+/*  table {
     margin-left: auto;
     margin-right: auto;
-  }
+  } */
   td {
     text-align: center;
   }
