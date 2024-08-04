@@ -52,6 +52,35 @@
             <p>You can see the ID cards <a href="https://drive.google.com/drive/folders/1cq0wbHhFDFfkmKQOSoZ6Puq9YnWhwvsa?usp=drive_link">here</a> (via Google Drive)</p>
             <h2>Can I request one</h2>
             <p>Currently you cannot request an ID card, but it may change in the future!</p>
+
+            <script>
+function theCommand(imageFile) {
+  var commandInput = document.getElementById("commandInput");
+  var command = commandInput.value;
+
+  var image = document.getElementById("result");
+  image.src = imageFile;
+
+  if (command == "make duck noise") {
+    command = "QUACK QUACK";
+  } else if (command == "make rooster noise") {
+    command = "COCK-A-DOODLE-DOO";
+  } else if (command == "show vito") {
+    command = "<img src='https://github.com/redst0ne8/redst0ne8.github.io/blob/main/CSC%20A%20ID%20Card%20Vito.png' alt='Alt'></img>";
+  } else if (command != "make duck noise" || command != "make rooster noise") {
+    command = "Invalid command";
+  }
+
+  var commandSpan = document.getElementById("result");
+  commandSpan.innerHTML = command;
+}
+            </script>
+            Enter command: <input type="text" id="commandInput" />
+            <button onClick="theCommand('duck.png')">Execute command</button>
+            <br />
+            <br />
+            <span id="result"></span>
+            <img id="imgResult"/>
         </body>
     </head>
 </html>
