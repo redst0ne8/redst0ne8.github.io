@@ -65,8 +65,8 @@ function theCommand(imageFile) {
     command = "QUACK QUACK";
   } else if (command == "make rooster noise") {
     command = "COCK-A-DOODLE-DOO";
-  } else if (command == "show vito") {
-    command = "<img src='CSC SA ID Card Cyte.png' alt='Alt'></img>";
+  } else if (command == "Cyte") {
+    command = "1 Card found. <br> <img src='CSC SA ID Card Cyte.png' alt='Cyte ID Carc'></img>";
   } else if (command != "make duck noise" || command != "make rooster noise") {
     command = "Invalid command";
   }
@@ -75,8 +75,8 @@ function theCommand(imageFile) {
   commandSpan.innerHTML = command;
 }
             </script>
-            Enter command: <input type="text" id="commandInput" />
-            <button onClick="theCommand('duck.png')">Execute command</button>
+            Enter username: <input type="text" id="commandInput" />
+            <button onClick="theCommand('duck.png')">Show results</button>
             <br />
             <br />
             <span id="result"></span>
