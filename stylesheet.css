@@ -54,26 +54,7 @@ p {
 a {
   font-size: 20px;
 }
-/*nav ul{
-    list-style-type: none;
-    font-weight: bold;
-}
-nav ul li {
-    display: inline;
-    border-right: 2px solid #000000;
-    padding-right: 8px;
-    padding-left: 8px;
-}
-nav ul :last-child {
-    border-right: none;
-}
-nav ul li a {
-    text-decoration: none;
-    color: blue;
-}
-nav ul li a :hover {
-    color: black;
-} */
+
 /* Navbar container */
 .navbar {
     overflow: hidden;
@@ -186,9 +167,9 @@ aside {
   padding-left: 10px;
 }
 
-/*.molcardexec {
+.executive {
   background-color: #bf93e4;
   border-radius: 10px;
   border-color: #7d3ab4;
   border-style: solid;
-}*/
+}
