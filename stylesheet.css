@@ -15,7 +15,7 @@
   font-style: normal;
 }
 .tab { 
-       display:inline-block; 
+       display:inline-block;
        margin-left: 40px; 
 }
 
@@ -173,3 +173,5 @@ aside {
   border-color: #7d3ab4;
   border-style: solid;
 }
+
+/*Written by redst0ne8, and some online tutorials for the navbar 9/27/2024*/
