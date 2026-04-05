@@ -5,6 +5,10 @@
 # Each section is self-contained and heavily commented.
 # =============================================================================
 
+# Module-level variable — used in the 'global' scope demo inside section 9.
+# This must live here (outside all functions) for 'global' to work correctly.
+module_counter = 0
+
 
 # =============================================================================
 # 1. VARIABLES & DATA TYPES
@@ -510,16 +514,37 @@ def functions_in_depth():
     print(f"Doubled: {doubled}")
     print(f"Evens:   {evens}")
 
-    # --- Scope: local vs global ---
+    # --- Scope: local vs nonlocal vs global ---
     print("\n--- Scope ---")
-    total = 100     # Global variable
 
-    def update_total():
-        global total         # Declare we're modifying the global
-        total += 50
+    # NONLOCAL: modify a variable in the enclosing (outer) function's scope.
+    # This is what you use when a nested function needs to write to an outer
+    # variable — NOT global, because that outer variable isn't module-level.
+    def outer():
+        total = 100
 
-    update_total()
-    print(f"Global total: {total}")   # 150
+        def update_total():
+            nonlocal total       # Refers to outer()'s total, not a global
+            total += 50
+
+        update_total()
+        print(f"nonlocal total: {total}")   # 150
+
+    outer()
+
+    # GLOBAL: modify a true module-level variable from inside a function.
+    # 'global' only works for variables defined at the TOP of the file,
+    # outside all functions (module_counter is defined there at the top).
+    # It does NOT work for variables inside another function — use nonlocal
+    # for those (see above).
+
+    def increment_counter():
+        global module_counter    # Refers to the module-level variable above
+        module_counter += 1
+
+    increment_counter()
+    increment_counter()
+    print(f"global module_counter: {module_counter}")   # 2
 
     # --- Docstrings (document your functions!) ---
     def divide(a, b):
