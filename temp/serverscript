@@ -1,21 +1,143 @@
-local event = game.ReplicatedStorage.CoasterEvents.Station
+--[[
+╔══════════════════════════════════════════════════════════════════╗
+║          ROLLER COASTER SYSTEM — STATION CONTROLLER              ║
+║              Place this Script directly in Workspace             ║
+╚══════════════════════════════════════════════════════════════════╝
 
-event.Event:Connect(function(trainName, trackPart)
-    local train = workspace:FindFirstChild(trainName)
+  Responsibilities:
+    1. Listen for "StationReached" BindableEvents fired by any train.
+    2. Log the arrival with timestamp.
+    3. Wait a configurable dwell time (simulating passenger loading).
+    4. Fire "ReleaseFromStation" back to the specific train.
 
-    if train and trackPart then
-        print("Train" .. trainName .. " has arrived. Track is " .. tostring(trackPart.BrickColor))
+  This script is intentionally train-agnostic: it resolves the train
+  Model from the name string the LeadCarServer passes, so multiple
+  coasters can run simultaneously without conflict.
+--]]
 
-        task.wait(5) -- Loading time
+------------------------------------------------------------------------
+-- CONFIGURATION
+------------------------------------------------------------------------
+local STATION_CONFIG = {
+    DwellTime   = 8,     -- seconds the train waits at the station
+    LogPrefix   = "[StationController]",
+}
 
-        -- Tell the train to move
-        if train:FindFirstChild("MoveTrain") then
-            train.MoveTrain:Fire(15)
+------------------------------------------------------------------------
+-- HELPER: pretty timestamp for logs
+------------------------------------------------------------------------
+local function timestamp()
+    -- os.date returns a table in Roblox; format manually
+    return ("[%02d:%02d:%02d]"):format(
+        os.date("*t").hour,
+        os.date("*t").min,
+        os.date("*t").sec
+    )
+end
+
+------------------------------------------------------------------------
+-- HELPER: find the ReleaseFromStation event inside a named train model
+------------------------------------------------------------------------
+local function getReleaseEvent(trainName)
+    -- Search Workspace (trains may be nested under a folder)
+    local trainModel = workspace:FindFirstChild(trainName, true)
+    if not trainModel then
+        warn(STATION_CONFIG.LogPrefix .. " Could not find train model: " .. trainName)
+        return nil
+    end
+
+    local eventsFolder = trainModel:FindFirstChild("Events")
+    if not eventsFolder then
+        warn(STATION_CONFIG.LogPrefix .. " No 'Events' folder in: " .. trainName)
+        return nil
+    end
+
+    local releaseEvt = eventsFolder:FindFirstChild("ReleaseFromStation")
+    if not releaseEvt then
+        warn(STATION_CONFIG.LogPrefix .. " No 'ReleaseFromStation' BindableEvent in: " .. trainName)
+        return nil
+    end
+
+    return releaseEvt
+end
+
+------------------------------------------------------------------------
+-- HELPER: find the StationReached event inside a named train model
+------------------------------------------------------------------------
+local function getStationReachedEvent(trainModel)
+    local eventsFolder = trainModel:FindFirstChild("Events")
+    if not eventsFolder then return nil end
+    return eventsFolder:FindFirstChild("StationReached")
+end
+
+------------------------------------------------------------------------
+-- STATION ARRIVAL HANDLER
+------------------------------------------------------------------------
+local function onStationReached(trainName)
+    local t = timestamp()
+
+    -- 1. Log the arrival
+    print(("%s %s Train '%s' has arrived at the station. Beginning %d-second dwell."):format(
+        STATION_CONFIG.LogPrefix,
+        t,
+        trainName,
+        STATION_CONFIG.DwellTime
+    ))
+
+    -- 2. Simulate loading/unloading delay
+    --    task.wait is non-blocking for other scripts on the same thread budget
+    task.wait(STATION_CONFIG.DwellTime)
+
+    -- 3. Locate the train's release event and fire it
+    local releaseEvt = getReleaseEvent(trainName)
+    if releaseEvt then
+        releaseEvt:Fire()
+        print(("%s %s Train '%s' released — enjoy the ride!"):format(
+            STATION_CONFIG.LogPrefix,
+            timestamp(),   -- re-sample time after the wait
+            trainName
+        ))
+    else
+        warn(("%s Could not release train '%s' — ReleaseFromStation event not found."):format(
+            STATION_CONFIG.LogPrefix,
+            trainName
+        ))
+    end
+end
+
+------------------------------------------------------------------------
+-- CONNECT TO ALL EXISTING TRAINS (and any added later)
+------------------------------------------------------------------------
+-- We watch Workspace for CoasterTrain models and wire up their events.
+
+local function connectTrain(model)
+    local stationEvt = getStationReachedEvent(model)
+    if not stationEvt then return end
+
+    -- Each arrival spawns its own task so multiple stations can run in parallel
+    stationEvt.Event:Connect(function(trainName)
+        task.spawn(onStationReached, trainName)
+    end)
+
+    print(("%s Listening to train: '%s'"):format(STATION_CONFIG.LogPrefix, model.Name))
+end
+
+-- Scan existing children
+for _, child in workspace:GetChildren() do
+    if child:IsA("Model") and child:FindFirstChild("Events") then
+        connectTrain(child)
+    end
+end
+
+-- Watch for trains added at runtime (e.g. dynamically spawned coasters)
+workspace.ChildAdded:Connect(function(child)
+    if child:IsA("Model") then
+        -- Small wait for the model's children to fully replicate
+        task.wait(0.5)
+        if child:FindFirstChild("Events") then
+            connectTrain(child)
         end
-
-        task.wait(1.5)
-
-        trackPart.BrickColor = BrickColor.new("Bright red")
-        print("Station track reset to Bright red.")
     end
 end)
+
+print(STATION_CONFIG.LogPrefix .. " Station Controller active and monitoring Workspace.")

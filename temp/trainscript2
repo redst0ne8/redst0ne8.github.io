@@ -34,35 +34,49 @@ local CONFIG = {
     SlowZoneSpeed   = 8,     -- studs/sec cap while in slow-zone track
 
     -- Station
-    StationWaitEvent = "ReleaseFromStation",  -- name of BindableEvent to wait on
+    StationWaitEvent    = "ReleaseFromStation",  -- name of BindableEvent to wait on
+    --
+    -- FIX: After the station releases the train, ignore station-colored track
+    -- for this many seconds so the train can physically escape the zone before
+    -- it would be eligible to stop again.  Tune to (station_length / SlowZoneSpeed).
+    StationCooldownTime = 6,  -- seconds of immunity after a release
 
     -- Audio (replace 0 with real asset IDs)
     ChainSoundID    = 0,     -- rbxassetid for chain-lift rattle
     TrackSoundID    = 0,     -- rbxassetid for wheel-on-track ambient
 
     -- Raycast
-    RayLength       = 6,     -- studs downward to scan for track
-    RayOffset       = Vector3.new(0, -0.5, 0),  -- origin offset from LeadCar CFrame
+    RayLength       = 8,     -- studs downward to scan for track (increased to be safe)
+
+    --[[
+        FIX — Ride Height vs. Ray Origin Offset (two separate concerns)
+        ────────────────────────────────────────────────────────────────
+        RayOriginUpOffset : how far ABOVE the PrimaryPart center the ray
+            starts, so the origin is never inside track geometry.
+            Keep this at 1–2 studs; it does NOT affect car height.
+
+        CarRideHeight : the true distance (in studs) from the rail surface
+            to the PrimaryPart center.  This is what actually positions the
+            car vertically.
+              • 0  → PrimaryPart center sits exactly on the rail surface
+              • positive value → PrimaryPart floats that many studs above it
+            Measure in Studio: drag the train until the wheels *look* correct,
+            then read the gap between the bottom of the wheel and the rail.
+            Set CarRideHeight to the distance from the rail to the PrimaryPart
+            centre (usually half the wheel diameter, or 0 if the PrimaryPart
+            IS at rail level).
+    --]]
+    RayOriginUpOffset = 2,   -- studs above PrimaryPart to start the downward ray
+    CarRideHeight     = 0,   -- studs above rail surface where PrimaryPart center should sit
+                             -- ← TUNE THIS: set to half your wheel radius if wheels sink in
+
+    -- Orientation smoothing (0–1; lower = smoother turns, higher = snappier)
+    OrientAlpha     = 0.25,
 
     -- Tick rate
     PhysicsStepRate = 0.03,  -- seconds between physics updates (~33 Hz)
 
     -- Spawn / Depot Teleport
-    -- On server start the train teleports OFF the depot and onto a track.
-    --
-    -- SpawnTrackNumber : which track lane to use (1, 2, 3 …)
-    --   The system searches Workspace for a Part (or Model) whose name matches
-    --   the pattern  "Track<N>"  e.g. "Track1", "Track2" — name your track
-    --   spawn-markers accordingly in Studio.
-    --
-    -- SpawnTrackFolder : name of the Workspace folder/model that holds those
-    --   spawn markers (set to "" to search all of Workspace).
-    --
-    -- SpawnHeightOffset : fine-tune nudge in studs above the marker
-    --   (0 = PrimaryPart center lands exactly on marker position).
-    --
-    -- SpawnFaceForward  : if true, the train's LookVector is aligned to the
-    --   marker part's LookVector; if false the rotation is left unchanged.
     SpawnTrackNumber  = 1,             -- ← CHANGE THIS to pick your lane
     SpawnTrackFolder  = "Tracks",      -- folder in Workspace holding Track1, Track2 …
     SpawnHeightOffset = 0,             -- fine-tune nudge in studs (0 = PrimaryPart center lands exactly on marker)
@@ -70,11 +84,11 @@ local CONFIG = {
 
     -- Color → Zone mapping  (BrickColor Name → zone string)
     DefaultColors = {
-        ["Maroon"]            = "Station",   -- station / boarding zone
-        ["Really red"]        = "SlowZone",  -- trim brake / slow section
-        ["Really blue"]       = "ChainLift", -- chain-lift hill
-        ["Lime green"]        = "Brake",     -- brake run (full deceleration)
-        ["Lily white"] = "Normal",    -- regular track (physics-driven)
+        ["Maroon"]       = "Station",   -- station / boarding zone
+        ["Really red"]   = "SlowZone",  -- trim brake / slow section
+        ["Really blue"]  = "ChainLift", -- chain-lift hill
+        ["Lime green"]   = "Brake",     -- brake run (full deceleration)
+        ["Lily white"]   = "Normal",    -- regular track (physics-driven)
     },
 }
 
@@ -82,28 +96,20 @@ local CONFIG = {
 -- SERVICES & REFERENCES
 ------------------------------------------------------------------------
 local RunService    = game:GetService("RunService")
-local SoundService  = game:GetService("SoundService")
 
 local trainModel    = script.Parent                          -- the coaster Model
 
 -- Resolve LeadCar to an actual BasePart.
--- Handles three common Studio setups:
---   (A) LeadCar is a BasePart directly in the model  → use it directly
---   (B) LeadCar is a Model                           → use its PrimaryPart
---   (C) LeadCar is a Model with no PrimaryPart set   → use the first BasePart found inside it
 local function resolveLeadCarPart()
     local raw = trainModel:WaitForChild("LeadCar")
 
     if raw:IsA("BasePart") then
-        -- Case A: it's already a part — perfect
         return raw
     elseif raw:IsA("Model") then
-        -- Case B: it's a Model; prefer the PrimaryPart
         if raw.PrimaryPart then
             warn("[CoasterSystem] LeadCar is a Model — using its PrimaryPart: " .. raw.PrimaryPart.Name)
             return raw.PrimaryPart
         end
-        -- Case C: no PrimaryPart set; grab the first BasePart child
         for _, child in raw:GetDescendants() do
             if child:IsA("BasePart") then
                 warn("[CoasterSystem] LeadCar Model has no PrimaryPart — falling back to first BasePart: " .. child.Name)
@@ -112,7 +118,6 @@ local function resolveLeadCarPart()
         end
     end
 
-    -- Nothing worked — surface a clear error instead of a cryptic CFrame crash
     error("[CoasterSystem] SETUP ERROR: Could not find a BasePart for LeadCar.\n" ..
           "  Fix: Make sure 'LeadCar' is a BasePart (or a Model with its PrimaryPart set)\n" ..
           "  inside the '" .. trainModel.Name .. "' Model.", 2)
@@ -120,10 +125,10 @@ end
 
 local leadCar = resolveLeadCarPart()
 
--- BindableEvents (must be created in the model before running)
+-- BindableEvents
 local eventsFolder      = trainModel:WaitForChild("Events")
-local stationReachedEvt = eventsFolder:WaitForChild("StationReached")       -- we Fire this
-local releaseEvt        = eventsFolder:WaitForChild("ReleaseFromStation")   -- we Wait on this
+local stationReachedEvt = eventsFolder:WaitForChild("StationReached")
+local releaseEvt        = eventsFolder:WaitForChild("ReleaseFromStation")
 
 ------------------------------------------------------------------------
 -- SOUND SETUP
@@ -143,7 +148,6 @@ local trackSound = makeSound(leadCar, CONFIG.TrackSoundID, true)
 ------------------------------------------------------------------------
 -- RAYCAST SETUP
 ------------------------------------------------------------------------
--- Build a RaycastParams that ignores the train's own parts
 local rayParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
 rayParams.FilterDescendantsInstances = { trainModel }
@@ -152,51 +156,47 @@ rayParams.FilterDescendantsInstances = { trainModel }
 -- STATE
 ------------------------------------------------------------------------
 local state = {
-    speed       = 0,        -- current speed studs/sec
-    zone        = "Normal", -- active zone string
-    atStation   = false,    -- true while waiting at station
-    paused      = false,    -- halts the physics loop
+    speed              = 0,        -- current speed studs/sec
+    zone               = "Normal", -- active zone string
+    atStation          = false,    -- true while waiting at station
+    paused             = false,    -- halts the physics loop
+    --
+    -- FIX: timestamp of the last station release; used to enforce
+    -- StationCooldownTime so the train can't immediately re-dock.
+    stationReleasedAt  = -math.huge,  -- os.clock() value; -inf means "never released yet"
 }
 
 ------------------------------------------------------------------------
 -- RAYCAST HELPER
--- Origin is placed ABOVE the car center so we never start inside geometry.
--- Direction shoots straight down CONFIG.RayLength studs.
+-- Origin starts RayOriginUpOffset studs ABOVE the PrimaryPart center so
+-- the ray never begins inside track geometry.
 ------------------------------------------------------------------------
-local RAY_UP_OFFSET = 2   -- studs above the leadCar center to start the ray
-
 local function castTrackRay()
-    local origin    = leadCar.CFrame.Position + Vector3.new(0, RAY_UP_OFFSET, 0)
-    local direction = Vector3.new(0, -(CONFIG.RayLength + RAY_UP_OFFSET), 0)
+    local totalRayLength = CONFIG.RayLength + CONFIG.RayOriginUpOffset
+    local origin    = leadCar.CFrame.Position + Vector3.new(0, CONFIG.RayOriginUpOffset, 0)
+    local direction = Vector3.new(0, -totalRayLength, 0)
     return workspace:Raycast(origin, direction, rayParams)
 end
 
 ------------------------------------------------------------------------
 -- SLOPE ACCELERATION
--- Projects world gravity onto the along-track tangent direction.
--- +ve = downhill (accelerate), -ve = uphill (decelerate)
 ------------------------------------------------------------------------
 local function slopeAcceleration(surfaceNormal, forwardDir)
     if not surfaceNormal then return 0 end
     local g = 196.2 * 0.8 * CONFIG.Gravity
 
-    -- Tangent = forward direction projected onto the surface plane
     local tangent = forwardDir - surfaceNormal * forwardDir:Dot(surfaceNormal)
     if tangent.Magnitude < 0.001 then return 0 end
     tangent = tangent.Unit
 
-    -- Dot with world-down gives signed slope component
     return g * Vector3.new(0, -1, 0):Dot(tangent)
 end
 
 ------------------------------------------------------------------------
 -- TRACK SNAP MOVEMENT
--- Advances the train along the surface tangent and re-orients its
--- CFrame to match the track slope. No secondary raycast — uses the
--- same hit data from the main loop tick.
+-- FIX: Uses CONFIG.CarRideHeight (not RayOriginUpOffset) to lift the
+-- PrimaryPart above the rail surface, so the two concerns are decoupled.
 ------------------------------------------------------------------------
-local ORIENT_ALPHA = 0.25  -- orientation slerp per tick (lower = smoother, higher = snappier)
-
 local function applyMovement(dt, surfaceNormal, hitPos)
     local primary = trainModel.PrimaryPart
     if not primary then
@@ -212,39 +212,38 @@ local function applyMovement(dt, surfaceNormal, hitPos)
     local currentLook = currentCF.LookVector
 
     if surfaceNormal and hitPos then
-        -- 1. Project look onto surface plane to get the along-track direction
+        -- 1. Project look onto surface plane → along-track tangent
         local tangent = currentLook - surfaceNormal * currentLook:Dot(surfaceNormal)
         if tangent.Magnitude < 0.001 then tangent = currentLook end
         tangent = tangent.Unit
 
         -- 2. Advance position along the tangent
-        local newPos = hitPos + tangent * (state.speed * dt)
-            + surfaceNormal * RAY_UP_OFFSET  -- lift back to car-center height
+        --    FIX: lift by CarRideHeight (true wheel-to-axle distance),
+        --         NOT by RayOriginUpOffset (which is just a ray-start bias).
+        local newPos = hitPos
+            + tangent * (state.speed * dt)
+            + surfaceNormal * CONFIG.CarRideHeight
 
-        -- 3. Build a surface-aligned CFrame at the new position
-        --    Right  = tangent × normal  (always perpendicular to both)
-        --    Up     = normal
-        --    Look   = right × normal  (re-derived, guaranteed on-surface)
+        -- 3. Build surface-aligned CFrame
         local right = tangent:Cross(surfaceNormal)
         if right.Magnitude < 0.001 then right = currentCF.RightVector end
         right = right.Unit
         local targetCF = CFrame.fromMatrix(newPos, right, surfaceNormal)
 
-        -- 4. Slerp only the orientation; position is moved directly
-        local smoothCF = currentCF:Lerp(targetCF, ORIENT_ALPHA)
-        -- Override position to the computed newPos (no positional lag)
+        -- 4. Slerp orientation, snap position
+        local smoothCF = currentCF:Lerp(targetCF, CONFIG.OrientAlpha)
         local finalCF  = CFrame.fromMatrix(newPos, smoothCF.RightVector, smoothCF.UpVector)
 
         trainModel:SetPrimaryPartCFrame(finalCF)
     else
-        -- No track below (airtime) — just push forward
+        -- No track below — push forward in air
         local newCF = currentCF + currentLook * (state.speed * dt)
         trainModel:SetPrimaryPartCFrame(newCF)
     end
 end
 
 ------------------------------------------------------------------------
--- ZONE HANDLERS  (called each physics tick, must be non-blocking)
+-- ZONE HANDLERS
 ------------------------------------------------------------------------
 local handlers = {}
 
@@ -279,9 +278,41 @@ function handlers.SlowZone(dt, surfaceNormal)
     state.speed = math.min(state.speed, CONFIG.SlowZoneSpeed)
 end
 
--- Station handler runs in its OWN thread so it never blocks the physics loop
+--[[
+    FIX — Station handler rewrite
+    ─────────────────────────────
+    Problem 1 (re-catching):
+        After ReleaseFromStation fires, the train is still physically inside
+        the station-colored track zone.  On the very next physics tick the
+        handler fires again, sets atStation = true, and re-parks the train.
+
+    Fix:
+        Record os.clock() into state.stationReleasedAt when released.
+        At the TOP of the handler, bail out early if we are within
+        StationCooldownTime seconds of the last release.  This gives the
+        train enough time to travel out of the colored zone before it is
+        eligible to stop again.
+
+    Problem 2 (speed on exit):
+        Original code set state.speed = CONFIG.SlowZoneSpeed directly after
+        the release — correct intent, but the outer physics loop immediately
+        calls handlers.Station again (because the zone is still "Station"),
+        which calls task.spawn again.  The cooldown above prevents that.
+        Once the cooldown expires and the train is physically past the station
+        zone, normal zone handlers take over naturally.
+--]]
 function handlers.Station(_dt, _normal)
-    if state.atStation then return end  -- already parked
+    -- Cooldown guard: ignore this zone for StationCooldownTime seconds after release
+    if os.clock() - state.stationReleasedAt < CONFIG.StationCooldownTime then
+        -- Still in cooldown — treat like a SlowZone so the train keeps moving out
+        handlers.SlowZone(_dt, _normal)
+        return
+    end
+
+    -- Already parked and waiting — do nothing; the spawned thread handles release
+    if state.atStation then return end
+
+    -- Park the train
     state.atStation = true
     state.speed     = 0
     chainSound:Stop()
@@ -290,18 +321,25 @@ function handlers.Station(_dt, _normal)
     print(("[CoasterSystem] Train '%s' arrived at Station"):format(trainModel.Name))
     stationReachedEvt:Fire(trainModel.Name)
 
-    -- Spin-wait in a spawned thread — physics loop continues ticking freely
+    -- Wait for release in its own thread so the physics loop stays non-blocking
     task.spawn(function()
         local released = false
         local conn = releaseEvt.Event:Connect(function()
             released = true
         end)
-        while not released do task.wait() end
+        while not released do
+            task.wait()
+        end
         conn:Disconnect()
 
-        state.atStation = false
-        state.speed     = CONFIG.SlowZoneSpeed  -- gentle push out
-        print(("[CoasterSystem] Train '%s' released from Station"):format(trainModel.Name))
+        -- Record release time BEFORE clearing atStation so the cooldown
+        -- guard is in place from the very first tick after we resume.
+        state.stationReleasedAt = os.clock()
+        state.atStation         = false
+        state.speed             = CONFIG.SlowZoneSpeed  -- ease out of station gently
+
+        print(("[CoasterSystem] Train '%s' released from Station — cooldown active for %.1f s")
+            :format(trainModel.Name, CONFIG.StationCooldownTime))
     end)
 end
 
@@ -338,7 +376,7 @@ local function physicsLoop()
         local handler = handlers[zone] or handlers.Normal
         handler(dt, surfNormal)
 
-        -- Move & snap train (skip positional move while parked, but still snap orientation)
+        -- Move & snap train (skip positional move while parked)
         if not state.atStation then
             applyMovement(dt, surfNormal, hitPos)
         end
@@ -348,27 +386,11 @@ local function physicsLoop()
 end
 
 ------------------------------------------------------------------------
--- STARTUP TELEPORT  —  move train off depot onto the configured track lane
+-- STARTUP TELEPORT
 ------------------------------------------------------------------------
-
---[[
-  HOW TO SET UP SPAWN MARKERS IN STUDIO
-  ─────────────────────────────────────
-  1. Create a Folder in Workspace named  "TrackSpawns"  (or change SpawnTrackFolder).
-  2. Inside it, add one Part per track lane:
-       Track1,  Track2,  Track3 …  (invisible / CanCollide off is fine)
-  3. Orient each Part so its FRONT FACE (+Z / LookVector) points in the
-     direction you want the train to travel when it leaves the station.
-  4. Set  CONFIG.SpawnTrackNumber  to whichever lane this train should start on.
-
-  The train's PrimaryPart CFrame will be set to the marker's CFrame
-  raised by  SpawnHeightOffset  studs so it sits on top of the track.
---]]
-
 local function findSpawnMarker(trackNumber)
     local markerName = "Track" .. tostring(trackNumber)
 
-    -- First look inside the designated folder
     if CONFIG.SpawnTrackFolder ~= "" then
         local folder = workspace:FindFirstChild(CONFIG.SpawnTrackFolder)
         if folder then
@@ -382,7 +404,6 @@ local function findSpawnMarker(trackNumber)
         end
     end
 
-    -- Fallback: search all of Workspace (recursive)
     local marker = workspace:FindFirstChild(markerName, true)
     if marker then
         warn(("[CoasterSystem] Found '%s' via recursive search — consider placing it in '%s' for clarity.")
@@ -392,7 +413,6 @@ local function findSpawnMarker(trackNumber)
 end
 
 local function getMarkerCFrame(marker)
-    -- Markers can be a BasePart or a Model (uses PrimaryPart / first BasePart)
     if marker:IsA("BasePart") then
         return marker.CFrame
     elseif marker:IsA("Model") then
@@ -422,44 +442,22 @@ local function teleportToSpawnTrack()
         return
     end
 
-    --[[
-        CENTERING STRATEGY
-        ──────────────────
-        We want the PrimaryPart (the midwheel center of LeadCar) to land
-        exactly at the marker's position — not offset above it.
-
-        SetPrimaryPartCFrame(cf) places the PrimaryPart's center at cf.Position
-        and rotates the whole model around that pivot, so passing markerCF
-        directly achieves a flush, perfectly-centered placement with no guesswork.
-
-        SpawnHeightOffset is intentionally ignored here; place your Track marker
-        Part at the exact height you want the wheel axle center to sit.
-        If you need a fine-tune nudge (e.g. +0.1 to avoid floor clipping),
-        set SpawnHeightOffset to a small value — but 0 is usually correct.
-    --]]
-
     local primary = trainModel.PrimaryPart or leadCar
 
-    -- Build rotation component only — we use the marker's orientation
-    -- but the marker's position IS the desired PrimaryPart world position.
     local spawnCF
     if CONFIG.SpawnFaceForward then
-        -- Full marker CFrame: position + orientation (train faces down the track)
         spawnCF = markerCF
     else
-        -- Position only; keep the train's current world rotation
         spawnCF = CFrame.new(markerCF.Position)
             * CFrame.fromMatrix(Vector3.zero,
                 primary.CFrame.RightVector,
                 primary.CFrame.UpVector)
     end
 
-    -- Apply optional fine-tune nudge along the marker's UpVector (usually 0)
     if CONFIG.SpawnHeightOffset ~= 0 then
         spawnCF = spawnCF + markerCF.UpVector * CONFIG.SpawnHeightOffset
     end
 
-    -- SetPrimaryPartCFrame pivots the ENTIRE model so PrimaryPart lands on spawnCF
     if trainModel.PrimaryPart then
         trainModel:SetPrimaryPartCFrame(spawnCF)
         print(("[CoasterSystem] Train '%s' centered on Track%d — PrimaryPart at %s")
@@ -469,9 +467,6 @@ local function teleportToSpawnTrack()
         warn("[CoasterSystem] No PrimaryPart set — only LeadCar was moved. Set PrimaryPart to the midwheel part for accurate centering.")
     end
 
-    -- Spawn track is a SlowZone, so pre-seed speed to SlowZoneSpeed
-    -- so the train immediately moves at the correct zone speed rather than
-    -- having to accelerate up from 0 (which would look like a stutter on entry)
     state.speed = CONFIG.SlowZoneSpeed
 end
 
@@ -480,14 +475,10 @@ end
 ------------------------------------------------------------------------
 print(("[CoasterSystem] LeadCarServer initialised on train '%s'"):format(trainModel.Name))
 
--- Small yield to let Workspace finish loading before we query for markers
 task.wait(3)
 
--- Teleport off the depot onto the configured track lane
 teleportToSpawnTrack()
 
--- Begin ambient sound
 trackSound:Play()
 
--- Launch physics loop in its own thread
 task.spawn(physicsLoop)
