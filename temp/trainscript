@@ -1,0 +1,404 @@
+--Script Written by Awwsomee. Any script found here that does not include this line is a fake, do not be fooled.
+game.ReplicatedStorage.CoasterEvents.SetupComplete.Event:Wait() -- Don't touch this
+
+-- You should've been summoned here by the ReadMe for Step 5, otherwise go to the ReadMe.
+
+--Step 5: Fill these four in
+
+local coaster = workspace["Eclipse"] -- Name of compiled coaster in workspace
+local startpiece = coaster.Track1 -- Change to starting piece of train, in this case my station. It doesn't have to exist yet, but it will. TrackNumber script said so.
+
+local TwoWheels = false -- If each car has 2 wheel sets (Like wooden train) then set this to true.
+local MovingHarnesses = false -- If your train has moving harnesses, set this to true.
+--Note: Harnesses MUST be set up in this way: [All names apart from 'Car' and 'Train' MUST be exact]
+--[[
+    Train
+      -HarnessEvent (BindableEvent)
+      -HarnessOpen (BoolValue, set to false)
+      -Car
+          -Harness (Model)
+              -Open (BasePart)
+              -Closed (BasePart)
+              -Moving (Model)
+                  -Primary (BasePart)
+]]
+--Any parts in 'Moving' will move with the harness.
+--The harness will move with 'Primary' moving to Open/Closed depending on the state of the harness.
+--Whatever you do, DO NOT move the train with harnesses open!
+
+-- Oh and don't forget to make the tracker parts invisible
+
+-- Don't touch below here
+
+-- Don't forget to change Updates and Gravity in CoasterProperties
+-- Updates is how many speed updates happen a second. Higher = Smoother but more lag. 10 Recommended.
+-- Gravity is speed in studs/s gained per second when going vertically downwards.
+
+-- Well, you're done here, go back to the ReadMe.
+
+-- Don't touch below here
+
+local updates = game.ReplicatedStorage.CoasterProperties.Updates.Value
+local gravity = game.ReplicatedStorage.CoasterProperties.Gravity.Value
+local partlength = 0
+if game.ReplicatedStorage.CoasterProperties:FindFirstChild("Length") then
+    partlength = game.ReplicatedStorage.CoasterProperties.Length.Value
+end
+
+local HOpenTime = 1.2
+local EventDebounce = 1
+
+local ts = game:GetService("TweenService")
+local info = TweenInfo.new(
+    1/updates,
+    Enum.EasingStyle.Linear,
+    Enum.EasingDirection.In,
+    0,
+    false,
+    0
+)
+
+local harnessinfo = TweenInfo.new(
+    HOpenTime,
+    Enum.EasingStyle.Sine,
+    Enum.EasingDirection.InOut,
+    0,
+    false,
+    0
+)
+
+local train = script.Parent
+local lead = train.Car1
+if train:FindFirstChild("Front") then
+    lead = train.Front
+end
+
+local leadtracker = lead.Tracker
+
+if TwoWheels then
+    leadtracker = lead.Wheels1.Tracker
+end
+
+local AtStation = false -- Make sure this is here!
+
+for i,v in pairs(game.ReplicatedStorage.CoasterSounds:GetChildren()) do
+    v:Clone().Parent = leadtracker
+end
+
+local distances = {}
+
+for i,v in pairs(train:GetChildren()) do
+    if v.Name ~= lead.Name and v:IsA("Model") and TwoWheels == false then
+        distances[v.Name] = math.abs((leadtracker.Position - v.Tracker.Position).Magnitude)/partlength
+    elseif v.Name == lead.Name then
+        distances[v.Name .. "2"] = math.abs((leadtracker.Position - v.Wheels1.Tracker.Position).Magnitude)/partlength
+    else
+        distances[v.Name .. "1"] = math.abs((leadtracker.Position - v.Wheels1.Tracker.Position).Magnitude)/partlength
+        distances[v.Name .. "2"] = math.abs((leadtracker.Position - v.Wheels2.Tracker.Position).Magnitude)/partlength
+    end
+end
+
+local harnesses = {}
+
+--This bit looks like a rollercoaster
+for i,v in pairs(train:GetChildren()) do
+    if v:IsA("Model") then
+        if v.PrimaryPart == v.Tracker then
+            if v.Anchored == false then
+                for k,w in pairs(v:GetChildren()) do
+                    if w:IsA("BasePart") and w.Name ~= "Tracker" then
+                        if w.Anchored then
+                            local weld = Instance.new("WeldConstraint", v.PrimaryPart)
+                            weld.Part0 = v.PrimaryPart
+                            weld.Part1 = w
+                            w.Anchored = false
+                        end
+                    elseif w:IsA("Model") and w.Name == "Harness" and MovingHarnesses then
+                        table.insert(harnesses, w)
+                        for l,x in pairs(w:GetDescendants()) do
+                            if x:IsA("BasePart") and (x.Parent.Name == "Moving" or x.Name == "Primary") then
+                                if x.Parent.Name == "Moving" then
+                                    local weld = Instance.new("WeldConstraint", x)
+                                    weld.Name = "HarnessConstraint"
+                                    weld.Part0 = v.PrimaryPart
+                                    weld.Part1 = x
+                                    x.Anchored = false
+                                else
+                                    local weld = Instance.new("WeldConstraint", v.PrimaryPart)
+                                    weld.Part0 = v.PrimaryPart
+                                    weld.Part1 = x
+                                    x.Anchored = false
+                                end
+                            end
+                        end
+                        for l,x in pairs(w.Moving:GetDescendants()) do
+                            if x:IsA("BasePart") and x.Name ~= "Primary" then
+                                if x.Anchored then
+                                    local weld = Instance.new("WeldConstraint", w.Moving.Primary)
+                                    weld.Name = "HarnessConstraint"
+                                    weld.Part0 = w.Moving.Primary
+                                    weld.Part1 = x
+                                    x.Anchored = false
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            for k,w in pairs(v:GetChildren()) do
+                if w:IsA("BasePart") and w.Name ~= "Tracker" then
+                    if w.Anchored then
+                        local weld = Instance.new("WeldConstraint", v.PrimaryPart)
+                        weld.Part0 = v.PrimaryPart
+                        weld.Part1 = w
+                        w.Anchored = false
+                    end
+                elseif w:IsA("Model") and w.Name == "Harness" and MovingHarnesses then
+                    table.insert(harnesses, w)
+                    if not (w:FindFirstChild("Open") and w:FindFirstChild("Closed")) then
+                        error("Harness missing 'Open', 'Closed', or 'Moving'!")
+                    end
+                    if not w.Moving:FindFirstChild("Primary") then
+                        error("Moving missing 'Primary'!")
+                    end
+                    for l,x in pairs(w:GetDescendants()) do
+                        if x:IsA("BasePart") and (x.Parent.Name ~= "Moving" or x.Name ~= "Primary") then
+                            if x.Anchored then
+                                local weld = Instance.new("WeldConstraint", x)
+                                weld.Name = "HarnessConstraint"
+                                weld.Part0 = v.PrimaryPart
+                                weld.Part1 = x
+                                x.Anchored = false
+                            else
+                                local weld = Instance.new("WeldConstraint", v.PrimaryPart)
+                                weld.Part0 = v.PrimaryPart
+                                weld.Part1 = x
+                                x.Anchored = false
+                            end
+                        end
+                    end
+                    for l,x in pairs(w.Moving:GetDescendants()) do
+                        if x:IsA("BasePart") and x.Name ~= "Primary" then
+                            if x.Anchored then
+                                local weld = Instance.new("WeldConstraint", w.Moving.Primary)
+                                weld.Name = "HarnessConstraint"
+                                weld.Part0 = w.Moving.Primary
+                                weld.Part1 = x
+                                x.Anchored = false
+                            end
+                        end
+                    end
+                elseif w:IsA("Model") and (string_sub(w.Name,1,6) == "Wheels") then
+                    w.PrimaryPart = w.Tracker
+                    for l,x in pairs(w:GetDescendants()) do
+                        if x:IsA("BasePart") and x.Name ~= "Tracker" then
+                            if x.Anchored then
+                                local weld = Instance.new("WeldConstraint", w.PrimaryPart)
+                                weld.Part0 = w.PrimaryPart
+                                weld.Part1 = x
+                                x.Anchored = false
+                            end
+                        end
+                    end
+                else
+                    for l,x in pairs(w:GetDescendants()) do
+                        if x:IsA("BasePart") and x.Name ~= "Tracker" then
+                            if x.Anchored then
+                                local weld = Instance.new("WeldConstraint", v.PrimaryPart)
+                                weld.Part0 = v.PrimaryPart
+                                weld.Part1 = x
+                                x.Anchored = false
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+if MovingHarnesses then
+    if not train:FindFirstChild("HarnessEvent") then
+        error("No BindableEvent in train called 'HarnessEvent'!")
+    end
+    if not train:FindFirstChild("HarnessOpen") then
+        error("No BoolValue in train called 'HarnessOpen'!")
+    end
+end
+
+train.HarnessEvent.Event:Connect(function()
+    print("Recieved")
+    print(harnesses)
+    for i,v in pairs(harnesses) do
+        v.Moving.Primary.HarnessConstraint.Enabled = false
+        if train.HarnessOpen.Value then
+            ts:Create(v.Moving.Primary, harnessinfo, {CFrame = v.Closed.CFrame}):Play()
+        else
+            ts:Create(v.Moving.Primary, harnessinfo, {CFrame = v.Open.CFrame}):Play()
+        end
+    end
+    wait(HOpenTime)
+    for i,v in pairs(harnesses) do
+        v.Moving.Primary.HarnessConstraint.Enabled = true
+        v.Moving.Primary.Anchored = false
+    end
+    train.HarnessOpen.Value = not train.HarnessOpen.Value
+end)
+
+local trackparts = #coaster:GetChildren()
+local currentpartno = tonumber(string.sub(startpiece.Name, 6, string.len(startpiece.Name)))
+local prevpartno = currentpartno
+local canfireevent = 0
+local lastevent = tick()
+
+local sspeed = 0 -- Speed in studs/second
+local lspeed = 0 -- Speed in lerps/second
+
+local function getCFrames()
+    local CFrames = {}
+    for i,v in pairs(distances) do
+        local temptotalontrack = currentpartno + throughlerp
+        if temptotalontrack < 1 then
+            temptotalontrack = temptotalontrack + trackparts
+        end
+        if temptotalontrack > trackparts then
+            temptotalontrack = temptotalontrack - trackparts
+        end
+        local nexttrack = math.ceil(temptotalontrack)
+        if nexttrack > trackparts then
+            nexttrack = nexttrack - trackparts
+        end
+        CFrames[i] = coaster["Track"..tostring(math.floor(temptotalontrack))].CFrame:Lerp(coaster["Track"..tostring(nexttrack)].CFrame, temptotalontrack-math.floor(temptotalontrack))
+    end
+    return CFrames
+end
+
+local function cos(angle)
+    local radians = angle * (math.pi/180)
+    local cosinradians = math.cos(radians)
+    return cosinradians
+end
+
+train:WaitForChild("MoveTrain").Event:Connect(function(newSpeed)
+    local currentpart = coaster["Track"..tonumber(currentpartno)]
+    print("Move command received!")
+    print(currentpart)
+    sspeed = newSpeed or 15
+
+    -- THIS IS THE FIX:
+    -- We force the 'canfireevent' to be very large so the train
+    -- has time to leave the station tracks before it checks for events again.
+    canfireevent = 200
+    lastevent = tick()
+end)
+
+while true do
+    local currentpart = coaster["Track"..tonumber(currentpartno)]
+
+    -- Play That Funky Music
+    for i,v in pairs(leadtracker:GetChildren()) do
+        if v.Name ~= currentpart and v:IsA("Sound") then
+            v.Playing = true
+            v.PlaybackSpeed = math.sqrt(sspeed/100)
+            v.Volume = 0.5*(math.sqrt(sspeed/100)+0.5)
+        elseif v.Name ~= "Track" and v:IsA("Sound") then
+            v.Playing = false
+            v.PlaybackSpeed = 1
+        elseif v:IsA("Sound") then
+            v.PlaybackSpeed = math.sqrt(sspeed/100)
+            v.Volume = 0.25*(math.sqrt(sspeed/100)+0.5)
+        end
+    end
+
+    -- In TrainScript
+    local readyColor = BrickColor.new("Maroon")
+    local lockColor = BrickColor.new("Really red")
+
+    if lead.Name == "Front" and currentpart.Event.Value ~= "" and currentpart.BrickColor == readyColor then
+        -- *** FIX: Stop and wait here until the track turns Bright red ***
+        print("MATCH: Stopping at station.")
+        currentpart.BrickColor = lockColor
+        sspeed = 0
+        game.ReplicatedStorage.CoasterEvents[currentpart.Event.Value]:Fire(train.Name, currentpart)
+
+        -- Wait until the track piece changes to lockColor (Bright red / "Really red")
+        -- We poll every 0.05s so resumption is nearly instant
+        while currentpart.BrickColor ~= lockColor do
+            wait(0.05)
+        end
+        -- Track is now Bright red — resume immediately
+        print("Track is now Bright red, resuming.")
+    else
+        -- This will tell us in the output exactly why it skipped
+        if lead.Name == "Front" and currentpart.Event.Value ~= "" then
+            print("SKIP: Track color was " .. tostring(currentpart.BrickColor) .. " but expected Bright red")
+        end
+    end
+
+    if currentpart.IntendedSpeed.Value ~= 0 or currentpart.Power.Value ~= 0 then
+        if sspeed > currentpart.IntendedSpeed.Value then
+            if sspeed - currentpart.IntendedSpeed.Value > (currentpart.Power.Value/updates) then
+                sspeed = sspeed - (currentpart.Power.Value / updates)
+            else
+                sspeed = currentpart.IntendedSpeed.Value
+            end
+        elseif sspeed < currentpart.IntendedSpeed.Value then
+            if currentpart.IntendedSpeed.Value - sspeed > (currentpart.Power.Value/updates) then
+                sspeed = sspeed + (currentpart.Power.Value / updates)
+            else
+                sspeed = currentpart.IntendedSpeed.Value
+            end
+        end
+    else
+        local direction = leadtracker.Orientation.X
+        local falldiff = 0
+        if direction <= 90 and direction >= -90 then
+            --falldiff = (direction/90) * (gravity/updates)
+            falldiff = cos(90-direction) * (gravity/updates)
+        else
+            --falldiff = ((180-direction)/90) * (gravity/updates)
+            falldiff = cos(270-direction) * (gravity/updates)
+        end
+        sspeed = sspeed - falldiff
+    end
+
+    if not ((currentpart.IntendedSpeed.Value ~= 0 or currentpart.Power.Value ~= 0) and sspeed == 0) then
+        canfireevent = canfireevent - math.abs(sspeed)
+        lspeed = sspeed/partlength
+        local totaltrack = currentpartno + throughlerp
+        if totaltrack > trackparts+1 then
+            totaltrack = totaltrack - trackparts
+        end
+        if totaltrack < 0 then
+            totaltrack = totaltrack + trackparts
+        end
+        currentpartno = math.floor(totaltrack)
+        throughlerp = totaltrack-math.floor(totaltrack)
+        if secondpiece > 2 then
+            secondpiece = secondpiece - trackparts
+        end
+        local finalCFrame = coaster["Track"..tostring(currentpartno)].CFrame:Lerp(coaster["Track"..tostring(secondpiece)].CFrame, throughlerp)
+        local otherCFrames = getCFrames()
+        if TwoWheels == false then
+            ts:Create(leadtracker, info, {CFrame=finalCFrame}):Play()
+            for i,v in pairs(train[i].PrimaryPart, info, {CFrame=v}):Play()
+            end
+        else
+            if leadtracker.Parent == "Front" then
+                ts:Create(leadtracker, info, {CFrame=finalCFrame}):Play()
+                ts:Create(leadtracker.Parent.Wheels2.Tracker, info, {CFrame=otherCFrames["Front 2"]}):Play()
+                ts:Create(leadtracker.Parent.Parent.Tracker, info, {CFrame=otherCFrames["Car1 2"]}):Play()
+                ts:Create(leadtracker.Parent.Parent.Tracker, info, {CFrame=finalCFrame:Lerp(otherCFrames["Car1 2"],0.5)}):Play()
+            end
+        end
+        for i,v in pairs(train:GetChildren()) do
+            if v.Name ~= lead.Name and v:IsA("Model") then
+                ts:Create(v.Wheels1.Tracker, info, {CFrame=otherCFrames[v.Name.." 1"]}):Play()
+                ts:Create(v.Wheels2.Tracker, info, {CFrame=otherCFrames[v.Name.." 2"]}):Play()
+                ts:Create(v.Tracker, info, {CFrame=otherCFrames[v.Name.." 1"]:Lerp(otherCFrames[v.Name.." 2"],0.5)}):Play()
+            end
+        end
+    end
+    wait(1/updates)
+end

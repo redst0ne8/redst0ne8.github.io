@@ -1,0 +1,434 @@
+-- Var calls
+local masterfolder = script.Parent
+
+-- Add this near the top of your script to track the actual state
+local gatesOpen = false
+local TweenService = game:GetService("TweenService")
+local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+
+local buttons = masterfolder.Buttons
+local dispatch = buttons.dispatch
+local gateclose = buttons.gateclose
+local gateopen = buttons.gateopen
+local restclose = buttons.restlock
+local restopen = buttons.restunlock
+local restindic = buttons.restindic
+local estop = buttons.EmButton
+
+local keys = masterfolder.Keys
+local powerkey = keys.pwrkey
+local cpowerkey = keys.cpwrkey
+local opkey = keys.opkey
+local lightkey = keys.lightkey
+local shutdownkey = keys.shutdownkey
+
+local screen = masterfolder.Screen.screen
+local osdecal = screen.osdecal
+local shuttingdecal = screen.shutting
+local bootingdecal = screen.booting
+local booteddecal = screen.booted
+local whitescreen = screen.SurfaceGui.whitescreen
+local startupui = screen.SurfaceGui.whitescreen.a.startup
+local mainui = screen.SurfaceGui.main
+
+local lightsfolder = workspace.lights
+
+local gatesfolder = workspace.Gates
+local wallToggle = workspace.ToggleWall
+
+local restraintstatus = buttons.restraints
+local gatestatus = buttons.gates
+local dispstatus = buttons.dispstate
+local poweredstatus = masterfolder.powered
+
+local groupId = 32710099
+local requiredRank = 200
+
+-- Helper: Rotate a model by degrees on X axis
+local function rotateModel(model, degrees)
+    model:PivotTo(model:GetPivot() * CFrame.Angles(math.rad(degrees), 0, 0))
+end
+
+-- Helper: Set indicator color/material
+local function setIndic(indic, r, g, b, neon)
+    indic.Color = Color3.new(r, g, b)
+    indic.Material = neon and Enum.Material.Neon or Enum.Material.SmoothPlastic
+end
+
+-- Helper: Apply light settings to a folder's descendants
+local function applyLights(folder, brightness, r, g, b, parentColor)
+    for _, obj in ipairs(folder:GetDescendants()) do
+        if obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+            obj.Brightness = brightness
+            obj.Color = Color3.new(r, g, b)
+            obj.Enabled = true
+            obj.Parent.Material = Enum.Material.Neon
+        elseif parentColor then
+            obj.Parent.Color = Color3.new(r, g, b)
+        end
+    end
+end
+
+-- Lights On/Off (consolidated)
+local function setLights(on)
+    lightkey.Model.ClickDetector.MaxActivationDistance = 0
+
+    if on then
+        rotateModel(lightkey.Model, 90)
+        applyLights(lightsfolder.Row1, 1, 1, 0, 1, true)  -- pink/magenta
+        applyLights(lightsfolder.Row2, 1, 1, 0, 1, true)
+        applyLights(lightsfolder.Row3, 1, 1, 0, 1, false)
+        applyLights(lightsfolder.Row4, 1, 1, 0, 1, true)
+        setIndic(lightkey.indic, 0, 1, 0, true)
+    else
+        rotateModel(lightkey.Model, 270)
+        applyLights(lightsfolder.Row1, 0.1, 1, 1, 1, true)
+        applyLights(lightsfolder.Row2, 0.1, 1, 1, 1, true)
+        applyLights(lightsfolder.Row3, 0.1, 1, 1, 1, false)
+        applyLights(lightsfolder.Row4, 0.1, 1, 1, 1, true)
+        setIndic(lightkey.indic, 1, 0, 0, true)
+    end
+
+    task.wait(5)
+    lightkey.Model.ClickDetector.MaxActivationDistance = 32
+end
+
+-- Correct Startup
+game:WaitForChild("Workspace")
+
+-- Bootup
+local function bootUp()
+    shutdownkey.Model.ClickDetector.MaxActivationDistance = 0
+    powerkey.Model.ClickDetector.MaxActivationDistance = 0
+    poweredstatus.Value = true
+
+    rotateModel(powerkey.Model, 90)
+    task.wait(0.5)
+    setIndic(powerkey.indic, 0, 1, 0, true)
+    task.wait(1)
+
+    osdecal.Transparency = 0
+    osdecal.Transparency = 1
+    task.wait(2)
+
+    for i = 1, 25 do
+        bootingdecal.Transparency -= 0.04
+        task.wait(0.01)
+    end
+    task.wait(4)
+    for i = 1, 25 do
+        bootingdecal.Transparency += 0.04
+        booteddecal.Transparency -= 0.04
+        task.wait(0.01)
+    end
+    task.wait(5)
+
+    booteddecal.Transparency = 1
+    whitescreen.Visible = true
+    task.wait(1)
+    startupui.Visible = true
+    startupui.OPKEY.Visible = false
+    task.wait(0.5)
+    startupui.CPWR.Visible = false
+
+    cpowerkey.Model.ClickDetector.MaxActivationDistance = 32
+    powerkey.Model.ClickDetector.MaxActivationDistance = 32
+    setIndic(lightkey.indic, 1, 1, 0, true)
+end
+
+local function shutdown()
+    rotateModel(shutdownkey.Model, 90)
+    setIndic(shutdownkey.indic, 0, 1, 0, true)
+    task.wait(1)
+
+    for i = 1, 25 do
+        mainui.Transparency += 0.04
+        bootingdecal.Transparency -= 0.04
+        task.wait(0.01)
+    end
+
+    mainui.Visible = false
+    mainui.Transparency = 0
+    task.wait(5)
+
+    shuttingdecal.Transparency = 1
+    task.wait(0.02)
+
+    startupui.Visible = true
+    startupui.CPWR.Visible = true
+    startupui.OPKEY.Visible = false
+
+    dispatch.ClickDetector.MaxActivationDistance = 0
+    dispatch.light.Color = Color3.new(0.156863, 0.498039, 0.278431)
+    dispatch.light.Material = Enum.Material.SmoothPlastic
+
+    powerkey.Model.ClickDetector.MaxActivationDistance = 0
+    cpowerkey.Model.ClickDetector.MaxActivationDistance = 32
+    cpowerkey.Model.ClickDetector.MaxActivationDistance = 32
+
+    rotateModel(cpowerkey.Model, 270)
+    setIndic(cpowerkey.indic, 0.023529, 0.031373, 0.07451, false)
+
+    rotateModel(opkey.Model, 270)
+    setIndic(opkey.indic, 0.023529, 0.031373, 0.07451, false)
+    setIndic(shutdownkey.indic, 0.023529, 0.031373, 0.07451, false)
+
+    gateclose.light.Color = Color3.new(0.458824, 0, 0)
+    gateclose.light.Material = Enum.Material.SmoothPlastic
+    gateopen.light.Color = Color3.new(0.156863, 0.498039, 0.278431)
+    gateopen.light.Material = Enum.Material.SmoothPlastic
+    gateclose.ClickDetector.MaxActivationDistance = 0
+
+    restindic.light.Color = Color3.new(0.023529, 0.031373, 0.07451)
+    restindic.light.Material = Enum.Material.SmoothPlastic
+    lightkey.Model.ClickDetector.MaxActivationDistance = 0
+    setIndic(lightkey.indic, 1, 1, 0, true)
+end
+
+local function shutdown2()
+    setIndic(cpowerkey.indic, 0.023529, 0.031373, 0.07451, false)
+    rotateModel(powerkey.Model, 270)
+    startupui.Visible = true
+    powerkey.Model.ClickDetector.MaxActivationDistance = 0
+    poweredstatus.Value = false
+    setIndic(lightkey.indic, 0.023529, 0.031373, 0.07451, false)
+end
+
+powerkey.Model.ClickDetector.MouseClick:Connect(function(player)
+    if player:GetRankInGroup(groupId) >= requiredRank then
+        print(player.Name .. " has permission! Running the action.")
+        if poweredstatus.Value == false then
+            bootUp()
+        else
+            shutdown2()
+        end
+    else
+        print(player.Name .. " does not have the required rank.")
+    end
+end)
+
+-- cPower!
+local function cPower()
+    powerkey.Model.ClickDetector.MaxActivationDistance = 0
+    cpowerkey.Model.ClickDetector.MaxActivationDistance = 0
+    rotateModel(cpowerkey.Model, 90)
+
+    setIndic(cpowerkey.indic, 0, 1, 0, true)
+    startupui.CPWR.Visible = false
+    task.wait(0.5)
+    startupui.OPKEY.Visible = true
+
+    opkey.Model.ClickDetector.MaxActivationDistance = 32
+end
+
+cpowerkey.Model.ClickDetector.MouseClick:Connect(function()
+    cPower()
+end)
+
+-- Gate/Restraint/Dispatch state checks
+local function restraintsCheck()
+    mainui.overlap.reststate.Text = restraintstatus.Value and "LOCKED" or "UNLOCKED"
+end
+
+-- Store the original starting CFrame for each gate so we can rotate relative to "home"
+local originalCFrames = {}
+
+-- Initialize original positions (put this near your other Var calls)
+for _, gate in ipairs(gatesfolder:GetChildren()) do
+    if gate:IsA("Model") and gate.PrimaryPart then
+        originalCFrames[gate] = gate.PrimaryPart.CFrame
+    end
+end
+
+-- Keep track of the current angle globally (or within the script's scope)
+local currentAngle = 0
+
+local function animateGates(targetAngle)
+    for _, gate in ipairs(gatesfolder:GetChildren()) do
+        local origin = originalCFrames[gate]
+        if gate.PrimaryPart and origin then
+            local rotationValue = Instance.new("NumberValue")
+
+            -- START from the angle we are currently at:
+            rotationValue.Value = currentAngle
+
+            rotationValue.Changed:Connect(function(val)
+                gate:PivotTo(origin * CFrame.Angles(0, math.rad(val), 0))
+            end)
+
+            local tween = TweenService:Create(rotationValue, tweenInfo, {Value = targetAngle})
+            tween:Play()
+
+            -- When the tween finishes, update our currentAngle tracker
+            tween.Completed:Connect(function()
+                currentAngle = targetAngle
+                rotationValue:Destroy()
+            end)
+        end
+    end
+end
+
+local function gatesCheck()
+    if gatestatus.Value == true then
+        -- CLOSED LOGIC
+        mainui.overlap.gatestate.Text = "CLOSED"
+        wallToggle.CanCollide = true
+
+        -- UI Lights (Keep your existing color/material logic here)
+        gateclose.light.Color = Color3.new(0, 1, 0)
+        gateclose.light.Material = Enum.Material.Neon
+        gateopen.light.Color = Color3.new(0.156863, 0.498039, 0.278431)
+        gateopen.light.Material = Enum.Material.SmoothPlastic
+
+        animateGates(0) -- Animate to 0 degrees
+    else
+        -- OPEN LOGIC
+        mainui.overlap.gatestate.Text = "OPEN"
+        wallToggle.CanCollide = false
+
+        -- UI Lights
+        gateclose.light.Color = Color3.new(1, 0, 0)
+        gateclose.light.Material = Enum.Material.Neon
+        gateopen.light.Color = Color3.new(0.156863, 0.498039, 0.278431)
+        gateopen.light.Material = Enum.Material.SmoothPlastic
+
+        animateGates(90) -- Animate to 90 degrees
+    end
+end
+
+local function dispatchReadyCheck()
+    local ready = restraintstatus.Value == true and gatestatus.Value == true
+    dispstatus.Value = ready
+    mainui.overlap.dispstate.Visible = true
+    if ready then
+        dispatch.light.Color = Color3.new(0, 1, 0)
+        dispatch.light.Material = Enum.Material.Neon
+        dispatch.ClickDetector.MaxActivationDistance = 32
+    else
+        dispatch.light.Color = Color3.new(0.156863, 0.498039, 0.278431)
+        dispatch.light.Material = Enum.Material.SmoothPlastic
+        dispatch.ClickDetector.MaxActivationDistance = 0
+    end
+end
+
+-- Operator Load
+local function loadMain()
+    opkey.Model.ClickDetector.MaxActivationDistance = 0
+    rotateModel(opkey.Model, 90)
+    setIndic(opkey.indic, 0, 1, 0, true)
+    task.wait(1)
+
+    startupui.OPKEY.Visible = false
+    startupui.Visible = false
+    task.wait(1.5)
+
+    mainui.Visible = true
+    whitescreen.Visible = false
+    task.wait(0.8)
+
+    mainui.overlap.gatestate.Visible = true
+    task.wait(0.2)
+    mainui.overlap.reststate.Visible = true
+
+    shutdownkey.Model.ClickDetector.MaxActivationDistance = 32
+    dispatch.ClickDetector.MaxActivationDistance = 0
+    gateclose.ClickDetector.MaxActivationDistance = 32
+    lightkey.Model.ClickDetector.MaxActivationDistance = 32
+
+    local islit = lightsfolder.lit.Value
+    setIndic(lightkey.indic, islit and 0 or 1, islit and 1 or 0, 0, true)
+end
+
+opkey.Model.ClickDetector.MouseClick:Connect(function()
+    loadMain()
+    gatesCheck()
+    restraintsCheck()
+    dispatchReadyCheck()
+    restindic.light.Color = Color3.new(0, 1, 0)
+    restindic.light.Material = Enum.Material.Neon
+end)
+
+gateopen.ClickDetector.MouseClick:Connect(function()
+    gatestatus.Value = false
+    gatesCheck()
+    task.wait(0)
+    gateopen.ClickDetector.MaxActivationDistance = 0
+    gateclose.ClickDetector.MaxActivationDistance = 32
+end)
+
+gateclose.ClickDetector.MouseClick:Connect(function()
+    gatestatus.Value = true
+    dispatchReadyCheck()
+    gatesCheck()
+    task.wait(0)
+    gateopen.ClickDetector.MaxActivationDistance = 32
+    gateclose.ClickDetector.MaxActivationDistance = 0
+end)
+
+estop.Button.ClickDetector.MouseClick:Connect(function()
+    loadMain()
+    gatesCheck()
+    restraintsCheck()
+    dispatchReadyCheck()
+end)
+
+-- Dispatch
+local function dispatchHandler1()
+    dispatch.ClickDetector.MaxActivationDistance = 0
+    dispatch.light.Color = Color3.new(0.156863, 0.498039, 0.278431)
+    dispatch.light.Material = Enum.Material.SmoothPlastic
+    mainui.overlap.dispstate.Visible = false
+    task.wait(1)
+
+    gateopen.ClickDetector.MaxActivationDistance = 0
+    gateopen.light.Color = Color3.new(0.156863, 0.498039, 0.278431)
+    gateopen.light.Material = Enum.Material.SmoothPlastic
+    restindic.light.Color = Color3.new(0.023529, 0.031373, 0.07451)
+    restindic.light.Material = Enum.Material.SmoothPlastic
+    task.wait(1)
+end
+
+local function dispatchHandler2()
+    local eclipseFolder = workspace:WaitForChild("Eclipse")
+    local processedTracks = 0
+
+    for _, obj in ipairs(eclipseFolder:GetChildren()) do
+        if obj:IsA("Part") and obj.Name == "Track" and obj.BrickColor == BrickColor.new("Really red") then
+            processedTracks += 1
+            obj.BrickColor = BrickColor.new("Maroon")
+            task.wait(15)
+            obj.BrickColor = BrickColor.new("Really red")
+            task.wait(5)
+        end
+    end
+
+    if processedTracks == 0 then
+        warn("No red track pieces found to process")
+    else
+        print("Successfully processed " .. processedTracks .. " red track pieces")
+    end
+end
+
+dispatch.ClickDetector.MouseClick:Connect(function()
+    dispatchHandler1()
+    task.spawn(dispatchHandler2)
+    dispatchReadyCheck()
+    gatesCheck()
+    restraintsCheck()
+end)
+
+shutdownkey.Model.ClickDetector.MouseClick:Connect(function()
+    if poweredstatus.Value == true then
+        shutdown()
+    else
+        print("Cannot shutdown: Not powered.")
+    end
+end)
+
+lightkey.Model.ClickDetector.MouseClick:Connect(function()
+    local turningOn = not lightsfolder.lit.Value
+    lightsfolder.lit.Value = turningOn
+    setLights(turningOn)
+end)
+
+-- Intended for ECLIPSE only. DO NOT MODIFY THIS SCRIPT. Scripted by: redst0ne5 | May 7th, 2026

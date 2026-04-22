@@ -1,0 +1,21 @@
+local event = game.ReplicatedStorage.CoasterEvents.Station
+
+event.Event:Connect(function(trainName, trackPart)
+    local train = workspace:FindFirstChild(trainName)
+
+    if train and trackPart then
+        print("Train" .. trainName .. " has arrived. Track is " .. tostring(trackPart.BrickColor))
+
+        task.wait(5) -- Loading time
+
+        -- Tell the train to move
+        if train:FindFirstChild("MoveTrain") then
+            train.MoveTrain:Fire(15)
+        end
+
+        task.wait(1.5)
+
+        trackPart.BrickColor = BrickColor.new("Bright red")
+        print("Station track reset to Bright red.")
+    end
+end)
