@@ -192,12 +192,12 @@ h1, h2, h3 {
 .page-content h1 {
     font-size: 2.5rem;
     margin-bottom: 2rem;
-    color: #7a0000;
+    color: #ff0000;
     text-shadow:
-        0 0 8px rgba(255, 0, 0, 0.3),
-        0 0 20px rgba(255, 0, 0, 0.2),
-        0 0 40px rgba(255, 0, 0, 0.1),
-        0 0 60px rgba(255, 0, 0, 0.05);
+        0 0 8px rgba(255, 0, 0, 0.9),
+        0 0 20px rgba(255, 0, 0, 0.7),
+        0 0 40px rgba(255, 0, 0, 0.4),
+        0 0 60px rgba(255, 0, 0, 0.2);
 }
 
 .page-content p {
@@ -350,27 +350,6 @@ h1, h2, h3 {
         flex-direction: column;
         align-items: flex-start;
     }
-}
-
-/* ── SPA Page System ── */
-.page {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
-    transform: translateY(16px);
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-}
-
-.page.active {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transform: translateY(0);
-    position: relative;
 }
 
 /* ── Fade In On Load ── */
