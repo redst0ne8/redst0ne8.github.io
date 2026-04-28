@@ -148,32 +148,9 @@
       animation: pulse 2s 1s ease-in-out infinite;
     }
 
-    /* Bottom link */
-    .link-row {
-      position: fixed;
-      bottom: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 32px;
-      opacity: 0;
-      animation: fadeUp 0.6s 0.9s forwards;
-    }
-
-    .link-row button {
-      font-family: 'Space Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      background: none;
-      border: none;
-      cursor: pointer;
-      transition: color 0.2s;
-      padding: 0;
-    }
-
-    .link-row button:hover { color: var(--accent); }
+    /* P mark clickable */
+    .p-mark { cursor: pointer; }
+    .p-mark:hover { opacity: 0.85; }
 
     /* PIN Modal overlay */
     .modal-overlay {
@@ -322,7 +299,7 @@
 
   <main class="page">
     <span class="badge">Domain Parked</span>
-    <span class="p-mark">P</span>
+    <span class="p-mark" onclick="openModal()">P</span>
     <h1>Something's Coming</h1>
     <div class="divider"></div>
     <div class="status">
@@ -331,9 +308,6 @@
     </div>
   </main>
 
-  <nav class="link-row">
-    <button onclick="openModal()">Backend</button>
-  </nav>
 
   <!-- PIN Modal -->
   <div class="modal-overlay" id="modalOverlay">
