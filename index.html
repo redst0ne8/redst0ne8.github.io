@@ -1,9 +1,229 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    
-  </head>
-  <body>
-    <a href="/portfolio/index.html">Index.html</a>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Parking — Coming Soon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0b;
+      --surface: #111114;
+      --border: #1e1e24;
+      --accent: #e8ff47;
+      --accent2: #ff4747;
+      --text: #e2e2e8;
+      --muted: #555562;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      overflow: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    /* Glow blob */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(232,255,71,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .page {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      gap: 0;
+    }
+
+    /* Top badge */
+    .badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 2px;
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.1s forwards;
+    }
+
+    /* P icon */
+    .p-mark {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(100px, 20vw, 180px);
+      line-height: 1;
+      color: var(--accent);
+      letter-spacing: -0.04em;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.2s forwards;
+      position: relative;
+      display: inline-block;
+    }
+
+    .p-mark::after {
+      content: '';
+      position: absolute;
+      bottom: 8px;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      animation: lineExpand 0.5s 0.85s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+
+    /* Headline */
+    h1 {
+      font-size: clamp(14px, 2.5vw, 20px);
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-top: 16px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.45s forwards;
+    }
+
+    /* Divider */
+    .divider {
+      width: 1px;
+      height: 48px;
+      background: linear-gradient(to bottom, var(--accent), transparent);
+      margin: 32px 0;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.55s forwards;
+    }
+
+    /* Status row */
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      opacity: 0;
+      animation: fadeUp 0.6s 0.65s forwards;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent2);
+      animation: pulse 2s 1s ease-in-out infinite;
+    }
+
+    /* Bottom link */
+    .link-row {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 32px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.9s forwards;
+    }
+
+    .link-row a {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .link-row a:hover { color: var(--accent); }
+
+    /* Corner accents */
+    .corner {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      opacity: 0;
+      animation: fadeIn 0.4s 1s forwards;
+    }
+    .corner.tl { top: 24px; left: 24px; border-top: 1px solid var(--muted); border-left: 1px solid var(--muted); }
+    .corner.tr { top: 24px; right: 24px; border-top: 1px solid var(--muted); border-right: 1px solid var(--muted); }
+    .corner.bl { bottom: 24px; left: 24px; border-bottom: 1px solid var(--muted); border-left: 1px solid var(--muted); }
+    .corner.br { bottom: 24px; right: 24px; border-bottom: 1px solid var(--muted); border-right: 1px solid var(--muted); }
+
+    /* Keyframes */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    @keyframes lineExpand {
+      to { transform: scaleX(1); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <main class="page">
+    <span class="badge">Domain Parked</span>
+    <span class="p-mark">P</span>
+    <h1>Something's Coming</h1>
+    <div class="divider"></div>
+    <div class="status">
+      <span class="dot"></span>
+      <span>Placeholder active</span>
+    </div>
+  </main>
+
+  <nav class="link-row">
+    <a href="/portfolio/index.html">← Portfolio</a>
+    <a href="mailto:hello@example.com">Contact</a>
+  </nav>
+
+</body>
 </html>
