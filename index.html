@@ -160,17 +160,128 @@
       animation: fadeUp 0.6s 0.9s forwards;
     }
 
-    .link-row a {
+    .link-row button {
       font-family: 'Space Mono', monospace;
       font-size: 11px;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--muted);
-      text-decoration: none;
+      background: none;
+      border: none;
+      cursor: pointer;
       transition: color 0.2s;
+      padding: 0;
     }
 
-    .link-row a:hover { color: var(--accent); }
+    .link-row button:hover { color: var(--accent); }
+
+    /* PIN Modal overlay */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,11,0.85);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 40px 36px;
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+    }
+
+    .modal-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .pin-dots {
+      display: flex;
+      gap: 12px;
+    }
+
+    .pin-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid var(--muted);
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .pin-dot.filled {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .pin-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+
+    .pin-key {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 14px 0;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      user-select: none;
+    }
+
+    .pin-key:hover { border-color: var(--accent); color: var(--accent); }
+    .pin-key.wide { grid-column: span 2; }
+
+    .pin-error {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      height: 14px;
+      transition: opacity 0.2s;
+      opacity: 0;
+    }
+
+    .pin-error.show { opacity: 1; }
+
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .modal-close:hover { color: var(--text); }
 
     /* Corner accents */
     .corner {
@@ -220,5 +331,39 @@
     </div>
   </main>
 
+  <nav class="link-row">
+    <button onclick="openModal()">Backend</button>
+  </nav>
+
+  <!-- PIN Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <span class="modal-title">Enter PIN</span>
+      <div class="pin-dots" id="pinDots">
+        <div class="pin-dot" id="d0"></div>
+        <div class="pin-dot" id="d1"></div>
+        <div class="pin-dot" id="d2"></div>
+        <div class="pin-dot" id="d3"></div>
+      </div>
+      <div class="pin-keypad">
+        <div class="pin-key" onclick="pressKey('1')">1</div>
+        <div class="pin-key" onclick="pressKey('2')">2</div>
+        <div class="pin-key" onclick="pressKey('3')">3</div>
+        <div class="pin-key" onclick="pressKey('4')">4</div>
+        <div class="pin-key" onclick="pressKey('5')">5</div>
+        <div class="pin-key" onclick="pressKey('6')">6</div>
+        <div class="pin-key" onclick="pressKey('7')">7</div>
+        <div class="pin-key" onclick="pressKey('8')">8</div>
+        <div class="pin-key" onclick="pressKey('9')">9</div>
+        <div class="pin-key" onclick="pressKey('del')">⌫</div>
+        <div class="pin-key" onclick="pressKey('0')">0</div>
+        <div class="pin-key" onclick="pressKey('enter')">↵</div>
+      </div>
+      <span class="pin-error" id="pinError">Incorrect PIN</span>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
