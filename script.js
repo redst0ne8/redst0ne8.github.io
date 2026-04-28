@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────
 //  CONFIGURATION — edit these two values only
 // ─────────────────────────────────────────────
-const BACKEND_PIN      = "1234";          // Change to your desired PIN (any length)
-const BACKEND_REDIRECT = "/admin/index.html"; // Change to your backend URL
+const BACKEND_PIN      = "69420";          // Change to your desired PIN (any length)
+const BACKEND_REDIRECT = "https://backend.redst0ne8.site/index"; // Change to your backend URL
 // ─────────────────────────────────────────────
 
 let entered = "";
