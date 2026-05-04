@@ -1,0 +1,6 @@
+click
+rich
+customtkinter
+pynput
+pyautogui
+pyperclip
