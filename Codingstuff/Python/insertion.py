@@ -12,18 +12,6 @@ def gen_array():
         arr.append(random.randint(1, int(lim)))
     return arr
 
-# Helper function to cut provided array {arr} in half
-def split_array(arr):
-    if not arr: return print("Error: No array was provided.")
-    if (len(arr) % 2 == 0):
-        middle = (len(arr) // 2)
-    if not (len(arr) % 2 == 0):
-        middle = len(arr) // 2 + 1
-
-    left = arr[:middle]
-    right = arr[middle:]
-    return left, right
-
 # Function to sort
 def sort(arr):
     if not arr: 
@@ -38,32 +26,13 @@ def sort(arr):
                 
     return arr
 
-# Merge function
-def merge(arr1, arr2):
-    total_length = len(arr1) + len(arr2)
-    result = []
-    for i in range(total_length):
-        i = i - 1
-        if arr1[i] < arr2[i]:
-            result.append(arr1[i])
-        if arr1[i] > arr2[i]:
-            result.append(arr2[i])
-        if arr1[i] == arr2[i]:
-            result.append(arr1[i])
-            result.append(arr2[i])
-    return result
-
 # Main execution function
 def main():
     print("Merge-Insertion Sorter [Python]")
     array = gen_array()
     print(f"Array to sort: {array}")
-    array_left = split_array(array)[0]
-    array_right = split_array(array)[1]
-    print(f"Left Section: {array_left}, Right Section: {array_right}")
-    sorted_array_left = sort(array_left)
-    sorted_array_right = sort(array_right)
-    print(f"Sorted Left: {sorted_array_left}, Sorted Right: {sorted_array_right}")
+    sorted = sort(array)
+    print(f"Sorted Array: {sorted}")
 
 # Runtime
 main()
