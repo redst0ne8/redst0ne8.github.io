@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Parking — Coming Soon</title>
+  <title>redst0ne8</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   <style>
@@ -24,10 +24,8 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'Syne', sans-serif;
-      overflow: hidden;
     }
 
-    /* Grid background */
     body::before {
       content: '';
       position: fixed;
@@ -40,7 +38,6 @@
       pointer-events: none;
     }
 
-    /* Glow blob */
     body::after {
       content: '';
       position: fixed;
@@ -49,7 +46,7 @@
       transform: translateX(-50%);
       width: 600px;
       height: 400px;
-      background: radial-gradient(ellipse, rgba(232,255,71,0.06) 0%, transparent 70%);
+      background: radial-gradient(ellipse, rgba(255,0,0,0.06) 0%, transparent 70%);
       pointer-events: none;
     }
 
@@ -61,53 +58,35 @@
       justify-content: center;
       position: relative;
       z-index: 1;
-      gap: 0;
     }
 
-    /* Top badge */
-    .badge {
-      font-family: 'Space Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted);
-      border: 1px solid var(--border);
-      padding: 6px 14px;
-      border-radius: 2px;
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fadeUp 0.6s 0.1s forwards;
-    }
-
-    /* P icon */
-    .p-mark {
+    .logo {
       font-family: 'Syne', sans-serif;
       font-weight: 800;
-      font-size: clamp(100px, 20vw, 180px);
+      font-size: clamp(80px, 16vw, 140px);
       line-height: 1;
       color: var(--accent);
       letter-spacing: -0.04em;
       opacity: 0;
-      animation: fadeUp 0.7s 0.2s forwards;
+      animation: fadeUp 0.7s 0.1s forwards;
       position: relative;
       display: inline-block;
     }
 
-    .p-mark::after {
+    .logo::after {
       content: '';
       position: absolute;
-      bottom: 8px;
+      bottom: 6px;
       left: 0;
       width: 100%;
       height: 4px;
       background: var(--accent);
       transform: scaleX(0);
       transform-origin: left;
-      animation: lineExpand 0.5s 0.85s cubic-bezier(0.22,1,0.36,1) forwards;
+      animation: lineExpand 0.5s 0.7s cubic-bezier(0.22,1,0.36,1) forwards;
     }
 
-    /* Headline */
-    h1 {
+    .username {
       font-size: clamp(14px, 2.5vw, 20px);
       font-weight: 400;
       letter-spacing: 0.15em;
@@ -115,152 +94,71 @@
       color: var(--text);
       margin-top: 16px;
       opacity: 0;
+      animation: fadeUp 0.6s 0.35s forwards;
+    }
+
+    .divider {
+      width: 1px;
+      height: 32px;
+      background: linear-gradient(to bottom, var(--accent), transparent);
+      margin: 24px 0;
+      opacity: 0;
       animation: fadeUp 0.6s 0.45s forwards;
     }
 
-    /* Divider */
-    .divider {
-      width: 1px;
-      height: 48px;
-      background: linear-gradient(to bottom, var(--accent), transparent);
-      margin: 32px 0;
-      opacity: 0;
-      animation: fadeUp 0.6s 0.55s forwards;
-    }
-
-    /* Status row */
-    .status {
+    .github-link {
       display: flex;
       align-items: center;
       gap: 10px;
       font-family: 'Space Mono', monospace;
-      font-size: 12px;
+      font-size: 13px;
       color: var(--muted);
+      text-decoration: none;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.55s forwards;
+      transition: color 0.2s;
+      margin-bottom: 28px;
+    }
+
+    .github-link:hover {
+      color: var(--text);
+    }
+
+    .github-link svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
       opacity: 0;
       animation: fadeUp 0.6s 0.65s forwards;
     }
 
-    .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent2);
-      animation: pulse 2s 1s ease-in-out infinite;
-    }
-
-    /* P mark clickable */
-    .p-mark { cursor: pointer; }
-    .p-mark:hover { opacity: 0.85; }
-
-    /* PIN Modal overlay */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(10,10,11,0.85);
-      backdrop-filter: blur(6px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s;
-    }
-
-    .modal-overlay.open {
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    .modal {
+    .btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text);
       background: var(--surface);
       border: 1px solid var(--border);
-      padding: 40px 36px;
-      width: 300px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      position: relative;
+      padding: 14px 28px;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      cursor: pointer;
     }
 
-    .modal-title {
-      font-family: 'Space Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .pin-dots {
-      display: flex;
-      gap: 12px;
-    }
-
-    .pin-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      border: 1px solid var(--muted);
-      transition: background 0.15s, border-color 0.15s;
-    }
-
-    .pin-dot.filled {
-      background: var(--accent);
+    .btn:hover {
       border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(255,0,0,0.04);
     }
 
-    .pin-keypad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      width: 100%;
-    }
-
-    .pin-key {
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
-      color: var(--text);
-      background: var(--bg);
-      border: 1px solid var(--border);
-      padding: 14px 0;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
-      user-select: none;
-    }
-
-    .pin-key:hover { border-color: var(--accent); color: var(--accent); }
-    .pin-key.wide { grid-column: span 2; }
-
-    .pin-error {
-      font-family: 'Space Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent2);
-      height: 14px;
-      transition: opacity 0.2s;
-      opacity: 0;
-    }
-
-    .pin-error.show { opacity: 1; }
-
-    .modal-close {
-      position: absolute;
-      top: 12px;
-      right: 14px;
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-family: 'Space Mono', monospace;
-      font-size: 11px;
-      cursor: pointer;
-      transition: color 0.15s;
-    }
-    .modal-close:hover { color: var(--text); }
-
-    /* Corner accents */
     .corner {
       position: fixed;
       width: 20px;
@@ -273,7 +171,6 @@
     .corner.bl { bottom: 24px; left: 24px; border-bottom: 1px solid var(--muted); border-left: 1px solid var(--muted); }
     .corner.br { bottom: 24px; right: 24px; border-bottom: 1px solid var(--muted); border-right: 1px solid var(--muted); }
 
-    /* Keyframes */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -283,10 +180,6 @@
     }
     @keyframes lineExpand {
       to { transform: scaleX(1); }
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.3; }
     }
   </style>
 </head>
@@ -298,16 +191,20 @@
   <div class="corner br"></div>
 
   <main class="page">
-    <span class="badge">Domain Parked</span>
-    <span class="p-mark" onclick="openModal()">P</span>
-    <h1>Something's Coming</h1>
+    <span class="logo">R</span>
+    <span class="username">redst0ne8</span>
     <div class="divider"></div>
-    <div class="status">
-      <span class="dot"></span>
-      <span>Placeholder active</span>
+    <a class="github-link" href="https://github.com/redst0ne8" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+      github.com/redst0ne8
+    </a>
+    <div class="buttons">
+      <a class="btn" href="https://stonebots.redst0ne8.site/" target="_blank" rel="noopener">Stone Bots</a>
+      <a class="btn" href="https://portfolio.redst0ne8.site/" target="_blank" rel="noopener">Portfolio</a>
     </div>
   </main>
 
-  <script src="script.js"></script>
 </body>
 </html>
