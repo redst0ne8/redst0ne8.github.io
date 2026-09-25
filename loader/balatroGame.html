@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Chess</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<style>
+		/* Full-viewport canvas, remove margins */
+		html, body {
+			height: 100%;
+			margin: 0;
+			background: #222;
+			font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+		}
+		#container {
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+			display: block;
+		}
+	</style>
+</head>
+<body>
+	<div id="container"></div>
+
+	<script src="three.js"></script> <!--https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js -->
+	<script src="events.js"></script>
+	<script src="board.js"> </script>
+    <script src="selection.js"></script>
+	<script src="char.js"></script>
+</body>
+</html>
